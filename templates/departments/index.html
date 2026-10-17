@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% block title %}Department Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Departments</h1>
+        <p class="page-subtitle">Organizational units, department heads, and aggregate equipment valuations</p>
+    </div>
+    <div>
+        <button class="btn btn-primary-custom d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#addDeptModal">
+            <i class="bi bi-building-add"></i>
+            <span>Add Department</span>
+        </button>
+    </div>
+</div>
+
+<!-- Department Cards Grid -->
+<div class="row g-4 mb-4">
+    {% if departments %}
+        {% for d in departments %}
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card card-custom h-100">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="bg-primary-subtle text-primary p-2 rounded-3 fs-4">
+                                    <i class="bi bi-building"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-dark">{{ d.name }}</h5>
+                                    <span class="small text-muted">{{ d.location or 'Main Campus' }}</span>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('assets.index', department=d.name) }}">
+                                            <i class="bi bi-box-seam me-2"></i>View Assets
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editDeptModal{{ loop.index }}">
+                                            <i class="bi bi-pencil me-2"></i>Edit Department
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="POST" action="{{ url_for('departments.delete', dept_id=d._id) }}" onsubmit="return confirm('Delete department {{ d.name }}?');">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash3 me-2"></i>Delete
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="text-muted small mb-3 flex-grow-1">
+                            <div><i class="bi bi-person-badge text-secondary me-1"></i> <strong>Head:</strong> {{ d.head or 'Unassigned' }}</div>
+                            {% if d.email %}
+                                <div><i class="bi bi-envelope text-secondary me-1"></i> {{ d.email }}</div>
+                            {% endif %}
+                            {% if d.latitude and d.longitude %}
+                                <div class="mt-1">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> 
+                                    <strong>GPS:</strong>
+                                    <a href="https://www.google.com/maps?q={{ d.latitude }},{{ d.longitude }}" target="_blank" class="text-decoration-none text-primary" title="View on Google Maps">
+                                        <code>{{ d.latitude }}, {{ d.longitude }}</code> <i class="bi bi-box-arrow-up-right small"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                            {% if d.description %}
+                                <div class="mt-2 text-secondary">{{ d.description }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center mt-auto">
+                            <div>
+                                <span class="text-muted small d-block">Allocated Assets</span>
+                                <span class="fw-bold fs-5 text-dark">{{ d.asset_count }}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-muted small d-block">Total Valuation</span>
+                                <span class="fw-bold fs-6 text-success">{{ d.total_value_formatted }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Department Modal -->
+                <div class="modal fade" id="editDeptModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('departments.edit', dept_id=d._id) }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold">Edit Department</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Department Name <span class="text-danger">*</span></label>
+                                        <input type="text" name="name" class="form-control" value="{{ d.name }}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Department Head</label>
+                                        <input type="text" name="head" class="form-control" value="{{ d.head or '' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Contact Email</label>
+                                        <input type="email" name="email" class="form-control" value="{{ d.email or '' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Location / Building</label>
+                                        <input type="text" name="location" class="form-control" value="{{ d.location or '' }}">
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold">Latitude</label>
+                                            <input type="number" step="any" name="latitude" class="form-control" placeholder="e.g. 12.9716" value="{{ d.latitude if d.latitude is not none else '' }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold">Longitude</label>
+                                            <input type="number" step="any" name="longitude" class="form-control" placeholder="e.g. 77.5946" value="{{ d.longitude if d.longitude is not none else '' }}">
+                                        </div>
+                                        <div class="form-text mt-1">GeoJSON coordinates for campus/map geolocation.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Description</label>
+                                        <textarea name="description" class="form-control" rows="2">{{ d.description or '' }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-building fs-1 d-block mb-2"></i>
+            No departments created yet.
+        </div>
+    {% endif %}
+</div>
+
+<!-- Add Department Modal -->
+<div class="modal fade" id="addDeptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('departments.add') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create New Department</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Department Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control" placeholder="e.g. Computer Science / Robotics Lab" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Department Head</label>
+                        <input type="text" name="head" class="form-control" placeholder="e.g. Dr. Alan Turing">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Contact Email</label>
+                        <input type="email" name="email" class="form-control" placeholder="e.g. cs-dept@organization.edu">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Location / Building</label>
+                        <input type="text" name="location" class="form-control" placeholder="e.g. Engineering Block A">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Latitude</label>
+                            <input type="number" step="any" name="latitude" class="form-control" placeholder="e.g. 12.9716">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Longitude</label>
+                            <input type="number" step="any" name="longitude" class="form-control" placeholder="e.g. 77.5946">
+                        </div>
+                        <div class="form-text mt-1">GeoJSON coordinates for campus/map geolocation.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Description</label>
+                        <textarea name="description" class="form-control" rows="2" placeholder="Brief summary of department functions..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Department</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

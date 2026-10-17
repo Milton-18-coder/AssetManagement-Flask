@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Register New Asset{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('assets.index') }}">Assets</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New Asset</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">Register Asset</h1>
+        <p class="page-subtitle">Add a new physical asset into the central tracking system</p>
+    </div>
+    <div>
+        <a href="{{ url_for('assets.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Inventory
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('assets.add') }}">
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">1. General Information</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Asset Name <span class="text-danger">*</span></label>
+                    <input type="text" name="asset_name" class="form-control" placeholder="e.g. Dell Latitude 5420" value="{{ asset.asset_name or '' }}" required>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Category <span class="text-danger">*</span></label>
+                    <select name="category" class="form-select" required>
+                        <option value="">Select Category...</option>
+                        {% for c in categories %}
+                            <option value="{{ c.name }}" {% if asset.category == c.name %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Brand <span class="text-danger">*</span></label>
+                    <input type="text" name="brand" class="form-control" placeholder="e.g. Dell, HP, Cisco, Apple" value="{{ asset.brand or '' }}" required>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Model</label>
+                    <input type="text" name="model" class="form-control" placeholder="e.g. Latitude 5420 / MacBook Pro 16" value="{{ asset.model or '' }}">
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Serial Number <span class="text-danger">*</span></label>
+                    <input type="text" name="serial_number" class="form-control" placeholder="e.g. DL5420-9981" value="{{ asset.serial_number or '' }}" required>
+                    <div class="form-text">Must be unique across all inventory records.</div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">2. Procurement & Warranty</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Purchase Date</label>
+                    <input type="date" name="purchase_date" class="form-control" value="{{ asset.purchase_date or '' }}">
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Purchase Cost (INR ₹)</label>
+                    <input type="number" step="0.01" name="purchase_cost" class="form-control" placeholder="0.00" value="{{ asset.purchase_cost or '' }}">
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Supplier / Vendor</label>
+                    <input type="text" name="supplier" class="form-control" placeholder="e.g. ABC Technologies Ltd." value="{{ asset.supplier or '' }}">
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Warranty Expiry</label>
+                    <input type="date" name="warranty_expiry" class="form-control" value="{{ asset.warranty_expiry or '' }}">
+                </div>
+            </div>
+
+            <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">3. Location & Operational Status</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Department <span class="text-danger">*</span></label>
+                    <select name="department" class="form-select" required>
+                        <option value="">Select Department...</option>
+                        {% for d in departments %}
+                            <option value="{{ d.name }}" {% if asset.department == d.name %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Location / Room <span class="text-danger">*</span></label>
+                    <select name="location" class="form-select" required>
+                        <option value="">Select Location...</option>
+                        {% for l in locations %}
+                            <option value="{{ l.name }}" {% if asset.location == l.name %}selected{% endif %}>{{ l.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Status</label>
+                    <select name="status" class="form-select">
+                        {% for s in statuses %}
+                            <option value="{{ s }}" {% if (asset.status or 'Available') == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold">Condition</label>
+                    <select name="condition" class="form-select">
+                        {% for c in conditions %}
+                            <option value="{{ c }}" {% if (asset.condition or 'Good') == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Asset Description / Notes</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Technical specifications, accessories included, special notes...">{{ asset.description or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a href="{{ url_for('assets.index') }}" class="btn btn-light border px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary-custom px-4">
+                    <i class="bi bi-check2-circle me-1"></i> Register Asset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

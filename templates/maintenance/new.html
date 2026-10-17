@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Log Maintenance Ticket{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('maintenance.index') }}">Maintenance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New Ticket</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">Create Maintenance Ticket</h1>
+        <p class="page-subtitle">Initiate repairs, scheduled servicing, or software upgrades</p>
+    </div>
+    <div>
+        <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Maintenance
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('maintenance.new') }}">
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Select Asset <span class="text-danger">*</span></label>
+                    <select name="asset_id" class="form-select" required>
+                        <option value="">Choose Asset...</option>
+                        {% for a in assets %}
+                            <option value="{{ a.asset_id }}" {% if preselect_asset == a.asset_id %}selected{% endif %}>
+                                {{ a.asset_name }} ({{ a.asset_id }} &bull; {{ a.category }} &bull; {{ a.location }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Maintenance Type <span class="text-danger">*</span></label>
+                    <select name="maintenance_type" class="form-select" required>
+                        {% for t in types %}
+                            <option value="{{ t }}">{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Issue Summary / Reason <span class="text-danger">*</span></label>
+                    <input type="text" name="issue" class="form-control" placeholder="e.g. Battery not holding charge / RAM upgrade required" required>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Service Provider / Vendor</label>
+                    <input type="text" name="service_provider" class="form-control" placeholder="e.g. In-house IT Team / Dell Authorized Service">
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Estimated Cost (INR ₹)</label>
+                    <input type="number" step="0.01" name="cost" class="form-control" placeholder="0.00">
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Start Date <span class="text-danger">*</span></label>
+                    <input type="date" name="start_date" class="form-control" value="{{ today }}" required>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Expected Completion Date</label>
+                    <input type="date" name="expected_completion" class="form-control">
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Initial Status</label>
+                    <select name="status" class="form-select">
+                        <option value="In Progress" selected>In Progress</option>
+                        <option value="Pending">Pending</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Detailed Description / Instructions</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Additional details, diagnostic symptoms, component part numbers..."></textarea>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a href="{{ url_for('maintenance.index') }}" class="btn btn-light border px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary-custom px-4">
+                    <i class="bi bi-tools me-1"></i> Log Ticket & Set Under Maintenance
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

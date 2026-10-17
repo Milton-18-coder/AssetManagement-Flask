@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AssetVault{% endblock %} - Smart Asset Management</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Sidebar Navigation -->
+        <aside class="app-sidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('dashboard.index') }}" class="brand-logo">
+                    <div class="brand-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <span>AssetVault</span>
+                </a>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li class="menu-category">Overview</li>
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.index') }}" class="nav-link-custom {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="menu-category">Inventory & Tracking</li>
+                <li class="nav-item">
+                    <a href="{{ url_for('assets.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('assets.') %}active{% endif %}">
+                        <i class="bi bi-box-seam-fill"></i>
+                        <span>Assets</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('assignments.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('assignments.') %}active{% endif %}">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <span>Assignments</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('maintenance.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('maintenance.') %}active{% endif %}">
+                        <i class="bi bi-tools"></i>
+                        <span>Maintenance</span>
+                    </a>
+                </li>
+                
+                <li class="menu-category">Organization</li>
+                <li class="nav-item">
+                    <a href="{{ url_for('users.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('users.') %}active{% endif %}">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Users / Employees</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('departments.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('departments.') %}active{% endif %}">
+                        <i class="bi bi-building"></i>
+                        <span>Departments</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('locations.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('locations.') %}active{% endif %}">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>Locations</span>
+                    </a>
+                </li>
+                
+                <li class="menu-category">Reports & Audit</li>
+                <li class="nav-item">
+                    <a href="{{ url_for('reports.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('reports.') %}active{% endif %}">
+                        <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('history.index') }}" class="nav-link-custom {% if request.endpoint and request.endpoint.startswith('history.') %}active{% endif %}">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Audit Trail</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile-widget">
+                    <div class="user-avatar">
+                        {{ current_user.username[0]|upper if current_user else 'A' }}
+                    </div>
+                    <div class="user-info flex-grow-1">
+                        <div class="user-name">{{ current_user.username if current_user else 'Admin' }}</div>
+                        <div class="user-role">{{ current_user.role if current_user else 'Super Admin' }}</div>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="text-danger ms-auto" title="Logout" style="font-size: 1.1rem;">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Top Navigation Bar -->
+            <header class="app-topbar">
+                <div class="topbar-left">
+                    <button id="sidebarToggle" class="btn btn-light d-lg-none me-2" type="button" aria-label="Toggle sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    
+                    <div class="search-input-wrapper">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="globalSearchInput" class="search-input" placeholder="Quick search assets, serial numbers, models..." autocomplete="off">
+                        <div id="globalSearchResults" class="search-results-dropdown"></div>
+                    </div>
+                </div>
+                
+                <div class="topbar-right">
+                    <a href="{{ url_for('assets.add') }}" class="btn btn-sm btn-primary-custom d-none d-sm-inline-flex align-items-center gap-1">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Add Asset</span>
+                    </a>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-light rounded-circle p-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Quick Links">
+                            <i class="bi bi-grid"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><h6 class="dropdown-header">Quick Actions</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('assets.add') }}"><i class="bi bi-box-seam me-2"></i>New Asset</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('assignments.new') }}"><i class="bi bi-person-check me-2"></i>Assign Asset</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('maintenance.new') }}"><i class="bi bi-tools me-2"></i>Log Maintenance</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('users.add') }}"><i class="bi bi-person-plus me-2"></i>Add User</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.index') }}"><i class="bi bi-file-earmark-text me-2"></i>Reports</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Body Content -->
+            <div class="app-content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom App JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

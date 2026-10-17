@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}New Asset Assignment{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('assignments.index') }}">Assignments</a></li>
+                <li class="breadcrumb-item active" aria-current="page">New Assignment</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">Assign Equipment</h1>
+        <p class="page-subtitle">Check out physical equipment to an employee, faculty member, or department</p>
+    </div>
+    <div>
+        <a href="{{ url_for('assignments.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Assignments
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('assignments.new') }}">
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Select Asset <span class="text-danger">*</span></label>
+                    <select name="asset_id" class="form-select" required>
+                        <option value="">Choose Asset...</option>
+                        {% for a in available_assets %}
+                            <option value="{{ a.asset_id }}" {% if preselect_asset == a.asset_id %}selected{% endif %}>
+                                {{ a.asset_name }} ({{ a.asset_id }} &bull; {{ a.category }} &bull; {{ a.status }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Assign To User / Person <span class="text-danger">*</span></label>
+                    <select name="user_id" class="form-select" required>
+                        <option value="">Choose User...</option>
+                        {% for u in users %}
+                            <option value="{{ u.user_id }}">
+                                {{ u.name }} ({{ u.user_id }} &bull; {{ u.department }} &bull; {{ u.designation }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Department</label>
+                    <select name="department" class="form-select">
+                        <option value="">Use User's Default Department</option>
+                        {% for d in departments %}
+                            <option value="{{ d.name }}">{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Assignment Date <span class="text-danger">*</span></label>
+                    <input type="date" name="assigned_date" class="form-control" value="{{ today }}" required>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Expected Return Date</label>
+                    <input type="date" name="expected_return_date" class="form-control">
+                    <div class="form-text">Leave empty for long-term / permanent assignment.</div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Assignment Notes / Purpose</label>
+                    <textarea name="notes" class="form-control" rows="3" placeholder="Project name, purpose of checkout, serial numbers of accessories included..."></textarea>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a href="{{ url_for('assignments.index') }}" class="btn btn-light border px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary-custom px-4">
+                    <i class="bi bi-person-check me-1"></i> Confirm & Check Out Asset
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

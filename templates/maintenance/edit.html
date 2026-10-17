@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Update Maintenance - {{ record.maintenance_id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('maintenance.index') }}">Maintenance</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ record.maintenance_id }}</li>
+            </ol>
+        </nav>
+        <h1 class="page-title">Update Maintenance Ticket</h1>
+        <p class="page-subtitle">{{ record.maintenance_id }} &bull; Asset: <strong>{{ record.asset_name }}</strong> (<code>{{ record.asset_id }}</code>)</p>
+    </div>
+    <div>
+        <a href="{{ url_for('maintenance.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Maintenance
+        </a>
+    </div>
+</div>
+
+<div class="card card-custom">
+    <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('maintenance.edit', maintenance_id=record.maintenance_id) }}">
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Maintenance Type</label>
+                    <select name="maintenance_type" class="form-select">
+                        {% for t in types %}
+                            <option value="{{ t }}" {% if record.maintenance_type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-bold">Service Provider / Technician</label>
+                    <input type="text" name="service_provider" class="form-control" value="{{ record.service_provider or '' }}">
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Issue Summary <span class="text-danger">*</span></label>
+                    <input type="text" name="issue" class="form-control" value="{{ record.issue }}" required>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Start Date</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ record.start_date }}">
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Expected Completion</label>
+                    <input type="date" name="expected_completion" class="form-control" value="{{ record.expected_completion or '' }}">
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Actual Completion Date</label>
+                    <input type="date" name="actual_completion" class="form-control" value="{{ record.actual_completion or '' }}">
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Maintenance Cost (INR ₹)</label>
+                    <input type="number" step="0.01" name="cost" class="form-control" value="{{ record.cost or 0 }}">
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Ticket Status</label>
+                    <select name="status" class="form-select">
+                        {% for s in statuses %}
+                            <option value="{{ s }}" {% if record.status == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-bold">Asset Condition After Service</label>
+                    <select name="condition_after" class="form-select">
+                        {% for c in conditions %}
+                            <option value="{{ c }}" {% if c == 'Good' %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-bold">Resolution Remarks</label>
+                    <textarea name="remarks" class="form-control" rows="3">{{ record.remarks or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a href="{{ url_for('maintenance.index') }}" class="btn btn-light border px-4">Cancel</a>
+                <button type="submit" class="btn btn-primary-custom px-4">
+                    <i class="bi bi-save me-1"></i> Update Ticket
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

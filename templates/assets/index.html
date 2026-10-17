@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% block title %}Asset Inventory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Asset Inventory</h1>
+        <p class="page-subtitle">Manage, track, assign, and monitor physical equipment across all locations</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('assets.add') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+            <i class="bi bi-plus-lg"></i>
+            <span>Add New Asset</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filters and Search Bar -->
+<div class="card card-custom mb-3">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('assets.index') }}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-3">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search ID, Name, Serial, Brand..." value="{{ search }}">
+                </div>
+            </div>
+            
+            <div class="col-6 col-md-2">
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                        <option value="{{ c.name }}" {% if selected_category == c.name %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for s in statuses %}
+                        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <select name="condition" class="form-select form-select-sm">
+                    <option value="">All Conditions</option>
+                    <option value="Critical,Poor" {% if selected_condition == 'Critical,Poor' or selected_condition == 'Critical/Poor' %}selected{% endif %}>⚠️ Critical & Poor (Warnings)</option>
+                    {% for c in conditions %}
+                        <option value="{{ c }}" {% if selected_condition == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <select name="department" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                        <option value="{{ d.name }}" {% if selected_department == d.name %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-12 col-md-1 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-filter"></i></button>
+                <a href="{{ url_for('assets.index') }}" class="btn btn-sm btn-light border" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+
+        <!-- Quick Warning and Alert Filter Pills -->
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 pt-2 border-top">
+            <span class="small text-muted fw-semibold me-1"><i class="bi bi-funnel-fill text-primary me-1"></i>Quick Filters:</span>
+            <a href="{{ url_for('assets.index') }}" class="btn btn-xs btn-sm py-1 px-2 rounded-pill {% if not selected_alert and not selected_condition and not selected_status and not search and not selected_category and not selected_department %}btn-primary{% else %}btn-outline-secondary bg-white{% endif %}">
+                All Assets
+            </a>
+            <a href="{{ url_for('assets.index', alert='warranty') }}" class="btn btn-xs btn-sm py-1 px-2 rounded-pill {% if selected_alert == 'warranty' %}btn-warning text-dark fw-bold{% else %}btn-outline-warning text-dark bg-white{% endif %}">
+                <i class="bi bi-shield-exclamation text-warning me-1"></i>Warranty Expiring Soon
+            </a>
+            <a href="{{ url_for('assets.index', alert='condition') }}" class="btn btn-xs btn-sm py-1 px-2 rounded-pill {% if selected_alert == 'condition' or selected_condition in ['Critical', 'Poor', 'Critical,Poor', 'Critical/Poor'] %}btn-danger fw-bold{% else %}btn-outline-danger bg-white{% endif %}">
+                <i class="bi bi-exclamation-octagon text-danger me-1"></i>Critical / Poor Condition
+            </a>
+            <a href="{{ url_for('assets.index', alert='maintenance') }}" class="btn btn-xs btn-sm py-1 px-2 rounded-pill {% if selected_alert == 'maintenance' or selected_status == 'Under Maintenance' %}btn-warning text-dark fw-bold{% else %}btn-outline-secondary bg-white{% endif %}">
+                <i class="bi bi-tools text-warning me-1"></i>In Maintenance
+            </a>
+            <a href="{{ url_for('assets.index', alert='damaged') }}" class="btn btn-xs btn-sm py-1 px-2 rounded-pill {% if selected_alert == 'damaged' or selected_status == 'Damaged' %}btn-danger fw-bold{% else %}btn-outline-secondary bg-white{% endif %}">
+                <i class="bi bi-exclamation-triangle text-danger me-1"></i>Damaged
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Active Alert Banner when a Warning is Filtered -->
+{% if selected_alert == 'warranty' %}
+<div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center mb-3 py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-shield-exclamation fs-5 text-dark"></i>
+        <div>
+            <strong>Active Warning Filter:</strong> Showing assets with warranty expiring within 60 days.
+        </div>
+    </div>
+    <a href="{{ url_for('assets.index') }}" class="btn btn-sm btn-outline-dark bg-white">Clear Warning Filter</a>
+</div>
+{% elif selected_alert == 'condition' or selected_condition in ['Critical', 'Poor', 'Critical,Poor', 'Critical/Poor'] %}
+<div class="alert alert-danger border-0 shadow-sm d-flex justify-content-between align-items-center mb-3 py-2 px-3">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-octagon fs-5 text-danger"></i>
+        <div>
+            <strong>Active Warning Filter:</strong> Showing assets in <strong>Critical or Poor</strong> condition requiring attention.
+        </div>
+    </div>
+    <a href="{{ url_for('assets.index') }}" class="btn btn-sm btn-outline-danger bg-white">Clear Warning Filter</a>
+</div>
+{% endif %}
+
+<!-- Assets Table Card -->
+<div class="card card-custom">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark">
+            Showing {{ assets|length }} of {{ total_assets }} Assets
+        </span>
+        <div class="small text-muted">Page {{ page }} of {{ total_pages }}</div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead>
+                <tr>
+                    <th>Asset ID</th>
+                    <th>Asset Name</th>
+                    <th>Category</th>
+                    <th>Brand & Model</th>
+                    <th>Serial Number</th>
+                    <th>Department</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Condition</th>
+                    <th>Assigned To</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if assets %}
+                    {% for a in assets %}
+                        <tr {% if a.is_critical_condition %}class="table-danger-subtle"{% elif a.is_warranty_expiring %}class="table-warning-subtle"{% endif %}>
+                            <td>
+                                <a href="{{ url_for('assets.view', asset_id=a.asset_id) }}" class="fw-bold text-decoration-none text-primary">
+                                    {{ a.asset_id }}
+                                </a>
+                            </td>
+                            <td>
+                                <div>
+                                    <div class="fw-semibold text-dark d-flex align-items-center gap-1 flex-wrap">
+                                        <span>{{ a.asset_name }}</span>
+                                        {% if a.is_warranty_expiring %}
+                                            <span class="badge bg-warning text-dark border border-warning" style="font-size: 0.7rem;" title="Warranty expiring on {{ a.warranty_expiry }}">
+                                                <i class="bi bi-shield-exclamation"></i> Warranty Expiring ({{ a.warranty_expiry }})
+                                            </span>
+                                        {% elif a.is_warranty_expired %}
+                                            <span class="badge bg-secondary" style="font-size: 0.7rem;" title="Warranty expired on {{ a.warranty_expiry }}">
+                                                <i class="bi bi-shield-x"></i> Expired
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ a.purchase_cost|currency }}</small>
+                                </div>
+                            </td>
+
+                            <td><span class="badge bg-light text-dark border">{{ a.category }}</span></td>
+                            <td>{{ a.brand }} <span class="text-muted small">{{ a.model }}</span></td>
+                            <td><code>{{ a.serial_number }}</code></td>
+                            <td>{{ a.department }}</td>
+                            <td><i class="bi bi-geo-alt text-muted me-1"></i>{{ a.location }}</td>
+                            <td>
+                                <span class="badge {{ a.status|status_badge }}">{{ a.status }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {{ a.condition|condition_badge }}">{{ a.condition }}</span>
+                                {% if a.is_critical_condition %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-danger text-white" style="font-size: 0.65rem;">
+                                            <i class="bi bi-exclamation-octagon me-1"></i>Needs Attention
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if a.assigned_to and a.assigned_to.name %}
+                                    <span class="text-primary fw-medium"><i class="bi bi-person-fill me-1"></i>{{ a.assigned_to.name }}</span>
+                                {% else %}
+                                    <span class="text-muted small">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('assets.view', asset_id=a.asset_id) }}" class="btn btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('assets.edit', asset_id=a.asset_id) }}" class="btn btn-outline-secondary" title="Edit Asset">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span class="visually-hidden">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('assignments.new', asset_id=a.asset_id) }}">
+                                                <i class="bi bi-person-check text-primary me-2"></i>Assign Asset
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('maintenance.new', asset_id=a.asset_id) }}">
+                                                <i class="bi bi-tools text-warning me-2"></i>Send to Maintenance
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form method="POST" action="{{ url_for('assets.delete', asset_id=a.asset_id) }}" onsubmit="return confirm('Are you sure you want to delete asset {{ a.asset_id }} ({{ a.asset_name }})?');">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-trash3 me-2"></i>Delete Asset
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="11" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            No assets match the search criteria.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+            <span class="small text-muted">Showing page {{ page }} of {{ total_pages }}</span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('assets.index', page=page-1, search=search, category=selected_category, status=selected_status, condition=selected_condition, department=selected_department, location=selected_location, alert=selected_alert) }}">Previous</a>
+                    </li>
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+                            <li class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('assets.index', page=p, search=search, category=selected_category, status=selected_status, condition=selected_condition, department=selected_department, location=selected_location, alert=selected_alert) }}">{{ p }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('assets.index', page=page+1, search=search, category=selected_category, status=selected_status, condition=selected_condition, department=selected_department, location=selected_location, alert=selected_alert) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

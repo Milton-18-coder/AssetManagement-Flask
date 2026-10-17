@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Reports & Audits{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Reports & Audits</h1>
+        <p class="page-subtitle">Inventory audits, asset valuation summaries, and status distributions</p>
+    </div>
+</div>
+
+<!-- Report Category Tabs -->
+<ul class="nav nav-pills mb-4 gap-2 flex-wrap">
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'all' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='all') }}">All Assets</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'available' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='available') }}">Available</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'assigned' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='assigned') }}">Assigned</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'maintenance' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='maintenance') }}">Under Maintenance</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'damaged' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='damaged') }}">Damaged</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'lost' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='lost') }}">Lost</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if report_type == 'retired' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('reports.index', report_type='retired') }}">Retired</a>
+    </li>
+</ul>
+
+<!-- Filter Bar -->
+<div class="card card-custom mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('reports.index') }}" class="row g-2 align-items-center">
+            <input type="hidden" name="report_type" value="{{ report_type }}">
+            <div class="col-12 col-md-3">
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                        <option value="{{ c.name }}" {% if selected_category == c.name %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <select name="department" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                        <option value="{{ d.name }}" {% if selected_department == d.name %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <select name="location" class="form-select form-select-sm">
+                    <option value="">All Locations</option>
+                    {% for l in locations %}
+                        <option value="{{ l.name }}" {% if selected_location == l.name %}selected{% endif %}>{{ l.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-funnel"></i> Apply Filter</button>
+                <a href="{{ url_for('reports.index', report_type=report_type) }}" class="btn btn-sm btn-light border" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Metrics Overview Cards for Report -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6">
+        <div class="p-3 bg-white border rounded-3 d-flex align-items-center justify-content-between shadow-sm">
+            <div>
+                <span class="text-muted small text-uppercase fw-bold">Report Asset Count</span>
+                <div class="fw-bold fs-3 text-dark">{{ total_count }} Units</div>
+            </div>
+            <div class="p-3 bg-primary-subtle text-primary rounded-3 fs-3">
+                <i class="bi bi-box-seam"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="p-3 bg-white border rounded-3 d-flex align-items-center justify-content-between shadow-sm">
+            <div>
+                <span class="text-muted small text-uppercase fw-bold">Aggregate Valuation</span>
+                <div class="fw-bold fs-3 text-success">{{ total_val_formatted }}</div>
+            </div>
+            <div class="p-3 bg-success-subtle text-success rounded-3 fs-3">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Table -->
+<div class="card card-custom">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark">Data Preview ({{ assets|length }} Records)</span>
+        <button class="btn btn-sm btn-light border" onclick="window.print();"><i class="bi bi-printer me-1"></i> Print Page</button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead>
+                <tr>
+                    <th>Asset ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Brand & Model</th>
+                    <th>Serial No</th>
+                    <th>Department</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Purchase Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if assets %}
+                    {% for a in assets %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('assets.view', asset_id=a.asset_id) }}" class="fw-bold text-primary text-decoration-none">
+                                    {{ a.asset_id }}
+                                </a>
+                            </td>
+                            <td>{{ a.asset_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ a.category }}</span></td>
+                            <td>{{ a.brand }} {{ a.model }}</td>
+                            <td><code>{{ a.serial_number }}</code></td>
+                            <td>{{ a.department }}</td>
+                            <td>{{ a.location }}</td>
+                            <td><span class="badge {{ a.status|status_badge }}">{{ a.status }}</span></td>
+                            <td>{{ a.assigned_to.name if a.assigned_to else '-' }}</td>
+                            <td class="fw-semibold">{{ a.purchase_cost|currency }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+                            No assets match the selected report criteria.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

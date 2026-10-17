@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Maintenance Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Maintenance & Repairs</h1>
+        <p class="page-subtitle">Track servicing, repair tickets, preventive maintenance, and service costs</p>
+    </div>
+    <div>
+        <a href="{{ url_for('maintenance.new') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+            <i class="bi bi-tools"></i>
+            <span>Log Maintenance Ticket</span>
+        </a>
+    </div>
+</div>
+
+<!-- Search & Status Filter -->
+<div class="card card-custom mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('maintenance.index') }}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-6">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search ticket ID, asset, issue, provider..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Ticket Statuses</option>
+                    {% for s in statuses %}
+                        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-3 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-filter"></i> Filter</button>
+                <a href="{{ url_for('maintenance.index') }}" class="btn btn-sm btn-light border" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Maintenance Records Table -->
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Asset Name</th>
+                    <th>Type</th>
+                    <th>Issue Summary</th>
+                    <th>Service Provider</th>
+                    <th>Start Date</th>
+                    <th>Est. / Actual Due</th>
+                    <th>Cost</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if records %}
+                    {% for r in records %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">{{ r.maintenance_id }}</span></td>
+                            <td>
+                                <a href="{{ url_for('assets.view', asset_id=r.asset_id) }}" class="fw-bold text-primary text-decoration-none">
+                                    {{ r.asset_name }}
+                                </a>
+                                <div class="small text-muted">{{ r.asset_id }}</div>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ r.maintenance_type }}</span></td>
+                            <td>{{ r.issue }}</td>
+                            <td>{{ r.service_provider or 'Internal Team' }}</td>
+                            <td>{{ r.start_date|date_format }}</td>
+                            <td>
+                                {% if r.status == 'Completed' %}
+                                    <span class="text-success"><i class="bi bi-check-circle me-1"></i>{{ r.actual_completion|date_format }}</span>
+                                {% else %}
+                                    <span>{{ r.expected_completion|date_format if r.expected_completion else 'TBD' }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-semibold text-dark">{{ r.cost_formatted }}</td>
+                            <td>
+                                <span class="badge {% if r.status == 'Completed' %}bg-success{% elif r.status == 'In Progress' %}bg-warning text-dark{% elif r.status == 'Pending' %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {{ r.status }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('maintenance.edit', maintenance_id=r.maintenance_id) }}" class="btn btn-outline-secondary" title="Edit / Update">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% if r.status in ['Pending', 'In Progress'] %}
+                                        <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#quickCompleteModal{{ loop.index }}" title="Complete Ticket">
+                                            <i class="bi bi-check2-circle"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% if r.status in ['Pending', 'In Progress'] %}
+                            <!-- Quick Complete Modal -->
+                            <div class="modal fade" id="quickCompleteModal{{ loop.index }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content text-start">
+                                        <form method="POST" action="{{ url_for('maintenance.update_status', maintenance_id=r.maintenance_id) }}">
+                                            <input type="hidden" name="status" value="Completed">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title fw-bold">Complete Maintenance - {{ r.maintenance_id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="small text-muted mb-3">Mark this maintenance job as completed. The asset (<code>{{ r.asset_id }}</code>) will automatically return to <strong>Available</strong> status in inventory.</p>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Completion Date</label>
+                                                    <input type="date" name="actual_completion" class="form-control" value="{{ today }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Asset Condition After Service</label>
+                                                    <select name="condition" class="form-select">
+                                                        <option value="Excellent">Excellent</option>
+                                                        <option value="Good" selected>Good</option>
+                                                        <option value="Fair">Fair</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label small fw-bold">Resolution Remarks</label>
+                                                    <textarea name="remarks" class="form-control" rows="2" placeholder="Repairs completed, tests passed..."></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Mark Completed & Release Asset</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center py-5 text-muted">
+                            <i class="bi bi-tools fs-1 d-block mb-2"></i>
+                            No maintenance records found.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

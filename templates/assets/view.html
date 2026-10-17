@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block title %}{{ asset.asset_name }} ({{ asset.asset_id }}){% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="{{ url_for('assets.index') }}">Assets</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ asset.asset_id }}</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-3">
+            <h1 class="page-title mb-0">{{ asset.asset_name }}</h1>
+            <span class="badge {{ asset.status|status_badge }} fs-6">{{ asset.status }}</span>
+            <span class="badge {{ asset.condition|condition_badge }} fs-6">{{ asset.condition }}</span>
+        </div>
+        <p class="page-subtitle">{{ asset.category }} &bull; {{ asset.brand }} {{ asset.model }} &bull; Serial: <code>{{ asset.serial_number }}</code></p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if asset.status == 'Available' %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal">
+                <i class="bi bi-person-check me-1"></i> Assign Asset
+            </button>
+        {% elif asset.status == 'Assigned' %}
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#returnModal">
+                <i class="bi bi-arrow-return-left me-1"></i> Return Asset
+            </button>
+        {% endif %}
+        
+        <button class="btn btn-outline-secondary bg-white" data-bs-toggle="modal" data-bs-target="#moveModal">
+            <i class="bi bi-geo-alt me-1"></i> Move Location
+        </button>
+        <button class="btn btn-outline-warning text-dark bg-white" data-bs-toggle="modal" data-bs-target="#maintenanceModal">
+            <i class="bi bi-tools me-1"></i> Maintenance
+        </button>
+        <a href="{{ url_for('assets.edit', asset_id=asset.asset_id) }}" class="btn btn-outline-primary bg-white">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Specs, Attachments & Assignment Details -->
+    <div class="col-12 col-lg-7">
+        
+        <!-- Asset Identity Showcase -->
+        <div class="card card-custom mb-4 overflow-hidden border-0 shadow-sm" style="border-left: 4px solid var(--primary-color) !important;">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge bg-light text-dark border me-1">{{ asset.asset_id }}</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ asset.category }}</span>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <span class="badge {{ asset.status|status_badge }}">{{ asset.status }}</span>
+                        <span class="badge {{ asset.condition|condition_badge }}">{{ asset.condition }}</span>
+                    </div>
+                </div>
+                <h3 class="fw-bold text-dark mb-1">{{ asset.asset_name }}</h3>
+                <p class="text-muted small mb-3">{{ asset.brand }} {{ asset.model }}</p>
+                
+                <div class="row g-2 pt-2 border-top">
+                    <div class="col-12 col-sm-4 small text-secondary">
+                        <i class="bi bi-upc-scan me-1 text-dark"></i> Serial: <code>{{ asset.serial_number }}</code>
+                    </div>
+                    <div class="col-12 col-sm-4 small text-secondary">
+                        <i class="bi bi-geo-alt me-1 text-danger"></i> Location: <span class="fw-semibold text-dark">{{ asset.location }}</span>
+                    </div>
+                    <div class="col-12 col-sm-4 small text-secondary">
+                        <i class="bi bi-building me-1 text-info"></i> Department: <span class="fw-semibold text-dark">{{ asset.department }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Information Card -->
+        <div class="card card-custom mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-info-circle text-primary me-2"></i>Asset Specifications</h6>
+                <span class="badge {{ asset.condition|condition_badge }}">{{ asset.condition }} Condition</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-6 col-md-4">
+                        <div class="text-muted small">Category</div>
+                        <div class="fw-bold text-dark">{{ asset.category }}</div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="text-muted small">Brand & Model</div>
+                        <div class="fw-bold text-dark">{{ asset.brand }} {{ asset.model }}</div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="text-muted small">Serial Number</div>
+                        <div class="fw-bold text-dark"><code>{{ asset.serial_number }}</code></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="text-muted small">Department</div>
+                        <div class="fw-bold text-dark">{{ asset.department }}</div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="text-muted small">Current Location</div>
+                        <div class="fw-bold text-dark"><i class="bi bi-geo-alt text-danger me-1"></i>{{ asset.location }}</div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="text-muted small">Condition</div>
+                        <div><span class="badge {{ asset.condition|condition_badge }}">{{ asset.condition }}</span></div>
+                    </div>
+                    {% if asset.description %}
+                        <div class="col-12">
+                            <div class="text-muted small">Description</div>
+                            <div class="p-3 bg-light rounded mt-1 text-secondary small">{{ asset.description }}</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Procurement & Financials -->
+        <div class="card card-custom mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-cash-coin text-success me-2"></i>Procurement & Warranty</h6>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Purchase Date</div>
+                        <div class="fw-bold text-dark">{{ asset.purchase_date|date_format }}</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Purchase Cost</div>
+                        <div class="fw-bold text-success fs-6">{{ asset.purchase_cost|currency }}</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Supplier / Vendor</div>
+                        <div class="fw-bold text-dark">{{ asset.supplier or 'N/A' }}</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="text-muted small">Warranty Expiry</div>
+                        <div class="fw-bold text-dark">{{ asset.warranty_expiry|date_format }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Assignment Status -->
+        <div class="card card-custom">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-person-check text-info me-2"></i>Current Assignment</h6>
+                {% if asset.status == 'Assigned' %}
+                    <span class="badge bg-primary">Active Assignment</span>
+                {% else %}
+                    <span class="badge bg-light text-muted border">In Stock</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-4">
+                {% if asset.assigned_to and asset.assigned_to.name %}
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary text-white p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-weight: 700;">
+                            {{ asset.assigned_to.name[0]|upper }}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-0 text-dark">{{ asset.assigned_to.name }}</h6>
+                            <div class="small text-muted">{{ asset.assigned_to.email }} &bull; User ID: {{ asset.assigned_to.user_id }}</div>
+                            <div class="small text-secondary mt-1">
+                                <i class="bi bi-calendar-check me-1"></i> Assigned On: {{ asset.assigned_to.assignment_date|date_format }}
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#returnModal">
+                            <i class="bi bi-arrow-return-left me-1"></i> Return
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3 text-muted">
+                        <i class="bi bi-box2 fs-3 text-secondary d-block mb-1"></i>
+                        This asset is currently in inventory and available for assignment.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Right Column: Asset History Timeline -->
+    <div class="col-12 col-lg-5">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Lifecycle Timeline</h6>
+            </div>
+            <div class="card-body p-4">
+                {% if history %}
+                    <ul class="timeline">
+                        {% for item in history %}
+                            <li class="timeline-item">
+                                <span class="timeline-marker"></span>
+                                <div class="timeline-title">
+                                    <span class="badge bg-light text-dark border me-1">{{ item.action }}</span>
+                                </div>
+                                <div class="timeline-desc">{{ item.description }}</div>
+                                <div class="timeline-date">
+                                    <i class="bi bi-person me-1"></i>{{ item.performed_by }} &bull; <i class="bi bi-clock me-1"></i>{{ item.timestamp[:19]|replace('T', ' ') }}
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-4 text-muted">No history logged yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 1: Assign Asset -->
+<div class="modal fade" id="assignModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('assets.assign', asset_id=asset.asset_id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Assign Asset {{ asset.asset_id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Assign To User / Employee <span class="text-danger">*</span></label>
+                        <select name="user_id" class="form-select" required>
+                            <option value="">Select User...</option>
+                            {% for u in users %}
+                                <option value="{{ u.user_id }}">{{ u.name }} ({{ u.user_id }} - {{ u.department }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Assignment Date</label>
+                            <input type="date" name="assignment_date" class="form-control" value="{{ today }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Expected Return Date</label>
+                            <input type="date" name="expected_return_date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">Default to user department</option>
+                            {% for d in departments %}
+                                <option value="{{ d.name }}">{{ d.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Remarks / Purpose</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Assigned for Q1 project development"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Return Asset -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('assets.return_asset', asset_id=asset.asset_id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Return Asset {{ asset.asset_id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Return Date</label>
+                        <input type="date" name="return_date" class="form-control" value="{{ today }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Return Condition</label>
+                        <select name="condition" class="form-select">
+                            {% for c in conditions %}
+                                <option value="{{ c }}" {% if asset.condition == c %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Inspection Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="Any physical marks, functional check results..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Check In & Make Available</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Move Location -->
+<div class="modal fade" id="moveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('assets.move', asset_id=asset.asset_id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Move Asset Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">Current Location</label>
+                        <div class="fw-bold p-2 bg-light rounded">{{ asset.location }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Destination Location <span class="text-danger">*</span></label>
+                        <select name="to_location" class="form-select" required>
+                            <option value="">Select Destination...</option>
+                            {% for l in locations %}
+                                {% if l.name != asset.location %}
+                                    <option value="{{ l.name }}">{{ l.name }} ({{ l.building }} - {{ l.room }})</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Reason for Relocation</label>
+                        <input type="text" name="reason" class="form-control" placeholder="e.g. Transferred for lab session">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Location</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: Maintenance -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('maintenance.new') }}">
+                <input type="hidden" name="asset_id" value="{{ asset.asset_id }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Send to Maintenance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Maintenance Type</label>
+                        <select name="maintenance_type" class="form-select">
+                            <option value="Preventive">Preventive</option>
+                            <option value="Corrective / Repair">Corrective / Repair</option>
+                            <option value="Software Update">Software Update</option>
+                            <option value="Hardware Upgrade">Hardware Upgrade</option>
+                            <option value="Inspection / Audit">Inspection / Audit</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Issue / Problem Summary <span class="text-danger">*</span></label>
+                        <input type="text" name="issue" class="form-control" placeholder="e.g. Screen flickering / RAM upgrade" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Service Provider / Technician</label>
+                        <input type="text" name="service_provider" class="form-control" placeholder="e.g. Dell Authorized Service Center">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Start Date</label>
+                            <input type="date" name="start_date" class="form-control" value="{{ today }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Est. Cost (₹)</label>
+                            <input type="number" step="0.01" name="cost" class="form-control" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning text-dark">Log Ticket & Set Under Maintenance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

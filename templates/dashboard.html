@@ -1,0 +1,438 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Executive Dashboard</h1>
+        <p class="page-subtitle">Real-time inventory intelligence, asset status, and maintenance overview</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('assets.add') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle"></i>
+            <span>Register Asset</span>
+        </a>
+        <a href="{{ url_for('reports.index') }}"
+            class="btn btn-outline-secondary d-flex align-items-center gap-2 bg-white">
+            <i class="bi bi-download"></i>
+            <span>Reports</span>
+        </a>
+    </div>
+</div>
+{% if alerts.expiring_warranty or alerts.overdue_assignments or alerts.critical_condition %}
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm"
+            style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-left: 4px solid #f59e0b !important;">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-warning text-dark p-2 rounded-circle d-flex align-items-center justify-content-center"
+                            style="width: 38px; height: 38px;">
+                            <i class="bi bi-bell-fill fs-5"></i>
+                        </div>
+                        <div>
+                            <span class="fw-bold text-dark">Active Inventory Alerts & Notices:</span>
+                            <div class="small text-secondary mt-1 d-flex flex-wrap gap-2 align-items-center">
+                                {% if alerts.expiring_warranty %}
+                                <a href="{{ url_for('assets.index', alert='warranty') }}"
+                                    class="badge bg-warning text-dark text-decoration-none shadow-sm p-2"
+                                    title="View assets with warranty expiring soon">
+                                    <i class="bi bi-shield-exclamation me-1"></i> {{ alerts.expiring_warranty|length }} Warranty Expiring Soon
+                                </a>
+                                {% endif %}
+                                {% if alerts.overdue_assignments %}
+                                <a href="{{ url_for('assignments.index', status='Overdue') }}"
+                                    class="badge bg-danger text-white text-decoration-none shadow-sm p-2"
+                                    title="View overdue asset assignments">
+                                    <i class="bi bi-clock-history me-1"></i> {{ alerts.overdue_assignments|length }} Overdue Assignment(s)
+                                </a>
+                                {% endif %}
+                                {% if alerts.critical_condition %}
+                                <a href="{{ url_for('assets.index', alert='condition') }}"
+                                    class="badge bg-dark text-white text-decoration-none shadow-sm p-2"
+                                    title="View assets in critical or poor condition">
+                                    <i class="bi bi-exclamation-octagon me-1"></i> {{ alerts.critical_condition|length }} Asset(s) in Critical/Poor Condition
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-dark d-flex align-items-center gap-1 shadow-sm bg-white" data-bs-toggle="modal" data-bs-target="#alertsModal">
+                            <i class="bi bi-list-check"></i>
+                            <span>Review Alerts Details</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #3b82f6;">
+            <div>
+                <div class="stat-title">Total Assets</div>
+                <div class="stat-value">{{ stats.total_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #eff6ff; color: #3b82f6;">
+                <i class="bi bi-box-seam"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #10b981;">
+            <div>
+                <div class="stat-title">Available</div>
+                <div class="stat-value">{{ stats.available_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #ecfdf5; color: #10b981;">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #6366f1;">
+            <div>
+                <div class="stat-title">Assigned</div>
+                <div class="stat-value">{{ stats.assigned_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #eef2ff; color: #6366f1;">
+                <i class="bi bi-person-badge"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #f59e0b;">
+            <div>
+                <div class="stat-title">In Maintenance</div>
+                <div class="stat-value">{{ stats.maintenance_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #fffbeb; color: #f59e0b;">
+                <i class="bi bi-tools"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #ef4444;">
+            <div>
+                <div class="stat-title">Damaged</div>
+                <div class="stat-value">{{ stats.damaged_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #fef2f2; color: #ef4444;">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #64748b;">
+            <div>
+                <div class="stat-title">Lost</div>
+                <div class="stat-value">{{ stats.lost_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #f1f5f9; color: #64748b;">
+                <i class="bi bi-question-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #94a3b8;">
+            <div>
+                <div class="stat-title">Retired / Disposed</div>
+                <div class="stat-value">{{ stats.retired_assets + stats.disposed_assets }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #f8fafc; color: #94a3b8;">
+                <i class="bi bi-archive"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="--card-accent: #0284c7;">
+            <div>
+                <div class="stat-title">Total Valuation</div>
+                <div class="stat-value" style="font-size: 1.4rem;">{{ stats.total_value_formatted }}</div>
+            </div>
+            <div class="stat-icon-wrapper" style="background-color: #f0f9ff; color: #0284c7;">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-wrench-adjustable text-warning me-2"></i>Active
+                    Maintenance</h6>
+                <a href="{{ url_for('maintenance.new') }}" class="btn btn-xs btn-outline-primary btn-sm py-0 px-2">+ New
+                    Ticket</a>
+            </div>
+            <div class="card-body p-0">
+                {% if active_maintenance %}
+                <div class="list-group list-group-flush">
+                    {% for m in active_maintenance %}
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-primary">{{ m.asset_name }}</span>
+                            <span
+                                class="badge {% if m.status == 'In Progress' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{
+                                m.status }}</span>
+                        </div>
+                        <div class="small text-muted mb-1">{{ m.issue }} • <span class="fw-semibold">{{
+                                m.maintenance_type }}</span></div>
+                        <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+                            <span>Provider: {{ m.service_provider or 'Internal Team' }}</span>
+                            <span>Est. Due: {{ m.expected_completion|date_format }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-check-circle fs-2 text-success d-block mb-2"></i>
+                    No pending or active maintenance tickets.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-activity text-primary me-2"></i>Recent Activity &
+                    Operations</h6>
+                <a href="{{ url_for('history.index') }}" class="small text-decoration-none">View Full Audit Log
+                    &rarr;</a>
+            </div>
+            <div class="card-body p-3">
+                {% if recent_activities %}
+                <ul class="timeline">
+                    {% for log in recent_activities %}
+                    <li class="timeline-item">
+                        <span class="timeline-marker"></span>
+                        <div class="timeline-title">
+                            <span class="badge bg-light text-dark border me-1">{{ log.action }}</span>
+                            <span class="text-primary">{{ log.asset_id }}</span>
+                        </div>
+                        <div class="timeline-desc">{{ log.description }}</div>
+                        <div class="timeline-date">
+                            <i class="bi bi-person me-1"></i>{{ log.performed_by }} • <i class="bi bi-clock me-1"></i>{{
+                            log.timestamp[:19]|replace('T', ' ') }}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    No activity records found yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+<!-- Active Inventory Alerts Modal -->
+<div class="modal fade" id="alertsModal" tabindex="-1" aria-labelledby="alertsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning bg-opacity-10 border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-warning text-dark p-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold text-dark" id="alertsModalLabel">Active Inventory Alerts & Notices</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <ul class="nav nav-tabs nav-fill bg-light px-3 pt-2 border-bottom" id="alertsTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-medium py-2 d-flex align-items-center justify-content-center gap-2" id="warranty-tab" data-bs-toggle="tab" data-bs-target="#warranty-tab-pane" type="button" role="tab">
+                            <i class="bi bi-shield-exclamation text-warning"></i>
+                            <span>Expiring Warranty</span>
+                            <span class="badge bg-warning text-dark">{{ alerts.expiring_warranty|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-medium py-2 d-flex align-items-center justify-content-center gap-2" id="overdue-tab" data-bs-toggle="tab" data-bs-target="#overdue-tab-pane" type="button" role="tab">
+                            <i class="bi bi-clock-history text-danger"></i>
+                            <span>Overdue Returns</span>
+                            <span class="badge bg-danger">{{ alerts.overdue_assignments|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-medium py-2 d-flex align-items-center justify-content-center gap-2" id="condition-tab" data-bs-toggle="tab" data-bs-target="#condition-tab-pane" type="button" role="tab">
+                            <i class="bi bi-exclamation-octagon text-dark"></i>
+                            <span>Critical Condition</span>
+                            <span class="badge bg-dark">{{ alerts.critical_condition|length }}</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-3" id="alertsTabContent">
+                    <!-- Tab 1: Warranty Expiring Soon -->
+                    <div class="tab-pane fade show active" id="warranty-tab-pane" role="tabpanel" tabindex="0">
+                        {% if alerts.expiring_warranty %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Asset Name</th>
+                                        <th>Department</th>
+                                        <th>Warranty Expiry</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for a in alerts.expiring_warranty %}
+                                    <tr>
+                                        <td><span class="fw-bold text-primary">{{ a.asset_id }}</span></td>
+                                        <td>
+                                            <div class="fw-medium text-dark">{{ a.asset_name }}</div>
+                                            <small class="text-muted">{{ a.brand }} {{ a.model }}</small>
+                                        </td>
+                                        <td><span class="badge bg-light text-dark border">{{ a.department }}</span></td>
+                                        <td>
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-calendar-event me-1"></i>{{ a.warranty_expiry }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{{ url_for('assets.view', asset_id=a.asset_id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <a href="{{ url_for('assets.index', alert='warranty') }}" class="btn btn-sm btn-light border">
+                                View All in Asset Inventory &rarr;
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-check-circle text-success fs-2 d-block mb-2"></i>
+                            No asset warranties expiring in the next 60 days.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tab 2: Overdue Assignments -->
+                    <div class="tab-pane fade" id="overdue-tab-pane" role="tabpanel" tabindex="0">
+                        {% if alerts.overdue_assignments %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Assignment ID</th>
+                                        <th>Asset</th>
+                                        <th>Assigned To</th>
+                                        <th>Due Date</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for o in alerts.overdue_assignments %}
+                                    <tr>
+                                        <td><span class="fw-bold text-primary">{{ o.assignment_id }}</span></td>
+                                        <td>
+                                            <div class="fw-medium text-dark">{{ o.asset_name }}</div>
+                                            <small class="text-muted"><code>{{ o.asset_id }}</code></small>
+                                        </td>
+                                        <td>
+                                            <div><i class="bi bi-person me-1"></i>{{ o.user_name }}</div>
+                                            <small class="text-muted">{{ o.department }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-circle me-1"></i>Due: {{ o.expected_return_date }}
+                                            </span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{{ url_for('assignments.index', status='Overdue') }}" class="btn btn-sm btn-outline-danger">
+                                                Manage Return
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <a href="{{ url_for('assignments.index', status='Overdue') }}" class="btn btn-sm btn-light border">
+                                View All Overdue Assignments &rarr;
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-check-circle text-success fs-2 d-block mb-2"></i>
+                            No overdue asset assignments found.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tab 3: Critical / Poor Condition Assets -->
+                    <div class="tab-pane fade" id="condition-tab-pane" role="tabpanel" tabindex="0">
+                        {% if alerts.critical_condition %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light small">
+                                    <tr>
+                                        <th>Asset ID</th>
+                                        <th>Asset Name</th>
+                                        <th>Condition</th>
+                                        <th>Status</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for c in alerts.critical_condition %}
+                                    <tr>
+                                        <td><span class="fw-bold text-primary">{{ c.asset_id }}</span></td>
+                                        <td>
+                                            <div class="fw-medium text-dark">{{ c.asset_name }}</div>
+                                            <small class="text-muted">{{ c.department }} • {{ c.location }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ c.condition|condition_badge }}">{{ c.condition }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {{ c.status|status_badge }}">{{ c.status }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{{ url_for('maintenance.new', asset_id=c.asset_id) }}" class="btn btn-sm btn-outline-warning me-1">
+                                                <i class="bi bi-tools"></i> Maintenance
+                                            </a>
+                                            <a href="{{ url_for('assets.view', asset_id=c.asset_id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <a href="{{ url_for('assets.index', alert='condition') }}" class="btn btn-sm btn-light border">
+                                View All in Asset Inventory &rarr;
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-check-circle text-success fs-2 d-block mb-2"></i>
+                            No assets in critical or poor condition.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

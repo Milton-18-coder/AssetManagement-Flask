@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Users & Employees{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Users & Employees</h1>
+        <p class="page-subtitle">Manage personnel, faculty, students, and their assigned equipment</p>
+    </div>
+    <div>
+        <a href="{{ url_for('users.add') }}" class="btn btn-primary-custom d-flex align-items-center gap-2">
+            <i class="bi bi-person-plus"></i>
+            <span>Add New User</span>
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card card-custom mb-4">
+    <div class="card-body p-3">
+        <form method="GET" action="{{ url_for('users.index') }}" class="row g-2 align-items-center">
+            <div class="col-12 col-md-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search by name, email, phone, ID..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <select name="department" class="form-select form-select-sm">
+                    <option value="">All Departments</option>
+                    {% for d in departments %}
+                        <option value="{{ d.name }}" {% if selected_department == d.name %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <select name="designation" class="form-select form-select-sm">
+                    <option value="">All Designations</option>
+                    <option value="Staff" {% if selected_designation == 'Staff' %}selected{% endif %}>Staff</option>
+                    <option value="Faculty / Professor" {% if selected_designation == 'Faculty / Professor' %}selected{% endif %}>Faculty / Professor</option>
+                    <option value="Student" {% if selected_designation == 'Student' %}selected{% endif %}>Student</option>
+                    <option value="Researcher" {% if selected_designation == 'Researcher' %}selected{% endif %}>Researcher</option>
+                    <option value="IT Admin" {% if selected_designation == 'IT Admin' %}selected{% endif %}>IT Admin</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-filter"></i> Filter</button>
+                <a href="{{ url_for('users.index') }}" class="btn btn-sm btn-light border" title="Reset"><i class="bi bi-arrow-counterclockwise"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card card-custom">
+    <div class="table-responsive">
+        <table class="table table-custom mb-0">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Full Name</th>
+                    <th>Email & Contact</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Assigned Assets</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if users %}
+                    {% for u in users %}
+                        <tr>
+                            <td><span class="badge bg-light text-dark border">{{ u.user_id }}</span></td>
+                            <td>
+                                <a href="{{ url_for('users.view', user_id=u.user_id) }}" class="fw-bold text-decoration-none text-primary">
+                                    {{ u.name }}
+                                </a>
+                            </td>
+                            <td>
+                                <div><i class="bi bi-envelope text-muted me-1"></i>{{ u.email }}</div>
+                                <div class="small text-muted"><i class="bi bi-telephone text-muted me-1"></i>{{ u.phone or 'N/A' }}</div>
+                            </td>
+                            <td>{{ u.department }}</td>
+                            <td>{{ u.designation or 'Staff' }}</td>
+                            <td>
+                                {% if u.assigned_assets_count > 0 %}
+                                    <span class="badge bg-primary rounded-pill px-2">{{ u.assigned_assets_count }} Asset(s)</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if u.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ u.status or 'Active' }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('users.view', user_id=u.user_id) }}" class="btn btn-outline-primary" title="View Profile">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('users.edit', user_id=u.user_id) }}" class="btn btn-outline-secondary" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('users.delete', user_id=u.user_id) }}" onsubmit="return confirm('Delete user {{ u.name }} ({{ u.user_id }})?');" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-2"></i>
+                            No users found.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
